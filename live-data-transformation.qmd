@@ -22,8 +22,15 @@ library(tidyr)
 
 # Data import
 
+-   Windows: AltGr/ Alt + -
+
+-   Mac: Option + -
+
+-   Assignment Operator: \<-
+
 ```{r}
 
+sanitation <- read_csv(here::here("data/jmp-washdata-indicators-safely-managed-sml.csv")) ##Presionando Tab hace que se ponga el nombre completo del file. 
 
 ```
 
@@ -36,8 +43,10 @@ Income groups are derived from the [World Bank Country and Lending Groups data](
 All code for pre-processing and the imported data can be accessed from the [larnsce/washr GitHub repository](https://github.com/larnsce/washr).
 
 ```{r}
-
-
+sanitation 
+glimpse(sanitation) # muestra las variables de las columnas
+head(sanitation) # muestra las primeras 6 filas 
+tail(sanitation) # muestra las ultimas 6 filas 
 ```
 
 # Data wrangling with dplyr
@@ -54,9 +63,30 @@ The `dplyr` R Package aims to provide a function for each basic verb of data man
 
 The function `filter()` chooses rows based on column values. To use filtering effectively, you have to know how to select the observations that you want using the comparison operators. R provides the standard suite: \>, \>=, \<, \<=, != (not equal), and == (equal).
 
+-   Ctrl + Shift + M for the pipe
+
 ```{r}
 
+sanitation |> 
+  filter(residence == "national") #692 Rows 
 
+sanitation |> 
+  filter(residence == "national", iso3 == "SEN") # 3 rows
+
+sanitation |> 
+  filter(iso3 == "UGA" | iso3 == "GHA" | iso3 == "USA") # 17 rows
+
+sanitation |> 
+  filter(iso3 %in% c("UGA", "GHA", "USA")) #Lo mismo que antes pero combina la variable
+
+sanitation |> 
+  filter(residence != "national") # 1394 rows
+
+sanitation |> 
+  filter(percent > 80) #200 rows
+
+sanitation |> 
+  filter(percent < 5) #16 rows 
 ```
 
 #### Your turn
@@ -67,6 +97,9 @@ The function `filter()` chooses rows based on column values. To use filtering ef
 
 ```{r}
 
+sanitation_national_2020 <- sanitation |> 
+  filter(residence == "national", year == 2020) |> 
+  filter(!is.na(income_id))
 
 ```
 
@@ -75,8 +108,11 @@ The function `filter()` chooses rows based on column values. To use filtering ef
 The function `arrange()` changes the order of the rows.
 
 ```{r}
+sanitation |> 
+  arrange(percent)
 
-
+sanitation |> 
+  arrange(desc(percent))
 
 ```
 
@@ -87,8 +123,18 @@ The function `arrange()` changes the order of the rows.
 The function `select()` picks variables based on their names.
 
 ```{r}
+sanitation |> 
+  select(name, iso3, percent, year) # regresa las 4 columnas selectionadas
 
+sanitation |> 
+  select(name:percent, -year) #regresa las columnas entre name y percent, menos la de year 
 
+sanitation |> 
+  select(4) #Selectiona la 4ta columna 
+
+sanitation |> 
+  select(name, starts_with("p")) #selecciona la columna name y las columnas que empiezan con la p 
+ 
 
 ```
 
@@ -106,6 +152,8 @@ The function `rename()` changes the name of columns.
 
 ```{r}
 
+sanitation |> 
+  rename(country_name = name) #cambia el nombre de la columna
 
 ```
 
@@ -114,6 +162,15 @@ The function `rename()` changes the name of columns.
 The function `relocate()` changes the order of the columns.
 
 ```{r}
+
+sanitation |> 
+  relocate(income_id) #coloca la ultima columna a la primera posicion
+
+sanitation |> 
+  relocate(income_id, .after = year)
+  
+sanitation |> 
+  relocate(income_id, .before = percent)
 
 
 ```
@@ -124,7 +181,8 @@ The function `mutate()` changes the values of columns and creates new columns.
 
 ```{r}
 
-
+sanitation |> 
+  mutate(people_access  = pop * percent / 100) #cantidad que tiene acceso de la poblacion 
 
 ```
 
@@ -144,16 +202,20 @@ ggplot(data = sanitation_national_2020,
   geom_boxplot(outlier.shape = NA) +
   geom_jitter(width = 0.1)
 
+#Definicion de los niveles del factor. 
+income_levels <- c("LIC", "LMC", "UMC", "HIC")
 
+sanitation_national_2020_fct <- sanitation_national_2020 |> 
+  mutate(income_id_fct = factor(income_id, levels = income_levels))
 
 # Let's check again with the new data
 
-# ggplot(data = sanitation_national_2020_fct,
-#        mapping = aes(x = income_id_fct, 
-#                      y = percent, 
-#                      fill = income_id)) +
-#   geom_boxplot(outlier.shape = NA) +
-#   geom_jitter(width = 0.1)
+ggplot(data = sanitation_national_2020_fct,
+       mapping = aes(x = income_id_fct, 
+                     y = percent, 
+                     fill = income_id)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.1)
 
 
 ```
@@ -164,8 +226,19 @@ ggplot(data = sanitation_national_2020,
 
 ```{r}
 
+sanitation_national_2020_fct |> 
+  filter(!is.na(percent)) |> #Este si elimina el NA de la data. 
+  summarise(mean = mean(percent),
+            sd = sd(percent),
+            count = n(),
+            max = max(percent),
+            min = min(percent)) # na.rm = TRUE remueve los NA del calculo, no de la data
 
-
+sanitation_national_2020_fct |>
+  filter(!is.na(percent)) |> 
+  group_by(region) |> 
+  summarise(mean = mean(percent),
+            count = n())
 ```
 
 #### Your turn
@@ -181,6 +254,9 @@ ggplot(data = sanitation_national_2020,
 5.  Use the pipe operator to add another line of code which adds the `mutate()` function to add a new column with the percentage of people with access to safely managed sanitation in each region. Name the new column percent.
 
 ```{r}
-
-
+sanitation_national_2020_fct |> 
+  mutate(people_access = pop * percent / 100) |> 
+  drop_na() |> 
+  group_by(region) |> 
+  summarise()
 ```

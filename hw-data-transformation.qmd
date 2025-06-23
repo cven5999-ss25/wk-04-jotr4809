@@ -36,7 +36,7 @@ Follow these steps to import the data:
 3.  Render and fix any errors
 
 ```{r}
-
+global_waste_data <- read_csv("data/country_level_data_0.csv")
 ```
 
 # Task 2: Data tidying
@@ -55,6 +55,9 @@ Follow these steps to select specific variables:
 2.  Run the code contained in the code chunk and fix any errors
 
 ```{r}
+
+global_waste_data |> 
+  select(iso3c, ends_with("percent"))
 
 ```
 
@@ -75,7 +78,8 @@ Follow these steps to select specific variables:
 3.  Render and fix any errors
 
 ```{r}
-
+composition <- global_waste_data |> 
+  select(country_name, income_id, total_msw_total_msw_generated_tons_year, population_population_number_of_people, starts_with("composition"))
 ```
 
 ## dplyr::rename()
@@ -97,7 +101,10 @@ Follow these steps to select specific variables:
 5.  Render and fix any errors
 
 ```{r}
-
+composition |> 
+  rename(food_organic_waste = composition_food_organic_waste_percent, 
+         glass = composition_glass_percent,
+         )
 ```
 
 # Task 3: Data transformation

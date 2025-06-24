@@ -13,15 +13,15 @@ Learning reflections are part of your weekly homework and have a weight of 20% o
 
 # Lecture
 
-<!--# Add your reflections on the lecture of this week here -->
+This lecture was full of knowledge and really useful when transformation data into something more relevant and meaningful. Also It allows us the manage the data into a more productive and efficient way without having to manage the original csv. making easier in case of an error to fix it and prevent manipulating the original raw data.
 
 # Homework Assignment
 
-<!--# Add your reflections on the homework programming assignment here -->
+This homework was more challenging that the previous homeworks, but also more interesting at the moment of thinking about how to write the correct code. It was really funny and the fact that it requires us to repeat some line codes again and again helps to memorize the same code and understand what it actually does.
 
 # Readings
 
-<!--# Add your reflections on the required readings here -->
+Really useful to understand the data types and the logical operators
 
 # Submit learning reflections
 

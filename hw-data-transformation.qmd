@@ -79,7 +79,11 @@ global_waste_data |>
 
 ```{r}
 composition <- global_waste_data |> 
-  select(country_name, income_id, total_msw_total_msw_generated_tons_year, population_population_number_of_people, starts_with("composition"))
+  select(country_name, 
+         income_id, 
+         total_msw_total_msw_generated_tons_year, 
+         population_population_number_of_people, 
+         starts_with("composition"))
 ```
 
 ## dplyr::rename()
@@ -101,9 +105,18 @@ composition <- global_waste_data |>
 5.  Render and fix any errors
 
 ```{r}
-composition |> 
+composition_tidy <- composition |> 
   rename(food_organic_waste = composition_food_organic_waste_percent, 
          glass = composition_glass_percent,
+         metal = composition_metal_percent,
+         other = composition_other_percent, 
+         paper_cardboard = composition_paper_cardboard_percent, 
+         plastic = composition_plastic_percent, 
+         rubber_leather = composition_rubber_leather_percent,
+         wood = composition_wood_percent, 
+         yard_garden_green_waste = composition_yard_garden_green_waste_percent,
+         msw_tons_year = total_msw_total_msw_generated_tons_year,
+         population = population_population_number_of_people
          )
 ```
 
@@ -119,6 +132,8 @@ Follow these steps to filter for missing data:
 
 ```{r}
 
+composition_tidy |> filter(!is.na(food_organic_waste))
+
 ```
 
 ### Part 2
@@ -129,6 +144,9 @@ Follow these steps to filter for missing data:
 
 ```{r}
 
+composition_tidy |> 
+  filter(income_id == "HIC")
+
 ```
 
 ### Part 3
@@ -138,7 +156,8 @@ Follow these steps to filter for missing data:
 1.  Use the `filter()` to create a subset from `composition_tidy` containing observations for countries that are not classified as low-income countries (LIC).
 
 ```{r}
-
+composition_tidy |> 
+  filter(income_id != "LIC")
 ```
 
 ### Part 4
@@ -148,7 +167,9 @@ Follow these steps to filter for missing data:
 1.  Create a subset from `composition_tidy` containing observations for countries classified as high-income countries (HIC) and with food and organic waste composition greater than 50%.
 
 ```{r}
-
+composition_tidy |> 
+  filter(income_id == "HIC", 
+         food_organic_waste > 50)
 ```
 
 ### Part 5
@@ -158,7 +179,7 @@ Follow these steps to filter for missing data:
 1.  Create a subset from `composition_tidy` containing observations for countries classified as high-income countries or low-income countries and with other waste composition greater than 40%.
 
 ```{r}
-
+composition_tidy |> filter(income_id == "HIC" | income_id == "LIC", other_percent > 40)
 ```
 
 ### Part 6
@@ -170,7 +191,8 @@ Follow these steps to filter for missing data:
 2.  Render and fix any errors
 
 ```{r}
-
+composition_tidy |> 
+  filter(country_name == "Switzerland" | country_name == "Ghana" | country_name == "Kenya" | country_name == "Turkey" | country_name == "Nepal" | country_name == "United States")
 ```
 
 ## dplyr::mutate() & dplyr::relocate()
@@ -187,6 +209,10 @@ Follow these steps to filter for missing data:
 
 ```{r}
 
+composition_tidy_capita <- composition_tidy |> 
+  mutate(msw_capita_kg_year = msw_tons_year * 1000 / population) |> 
+  relocate(msw_capita_kg_year, .after = msw_tons_year)
+  
 ```
 
 ## dplyr::mutate() & dplyr::case_when()
@@ -197,11 +223,11 @@ In class, we have not yet looked at the `case_when()` function. Use the exercise
 
 2.  What does the combination of `mutate()` and `case_when()` do?
 
-<!--# Remove this comment and use your own words to answer the question -->
+The first function mutate, allows us to create a new varible called income_cat which would have the income category levels. And the second function, case_when() allows us to assign the name of the variable to the one that was created previously in levels_income_cat, so that would assign the HIC to high income and etc.
 
 3.  How is the object `levels_income_cat` used and what does it achieve?
 
-<!--# Remove this comment and use your own words to answer the question -->
+    At the beginning it is used as a combination of 4 levels, and after the use on the fuction when it becomes a new variable and has its own column. And its function is just to clarify the Initials for all the income levels
 
 ```{r}
 #| eval: false 
@@ -245,9 +271,13 @@ Follow these steps to summarise the data:
 
 3.  Describe what the resulting table that you can see in the Console shows you.
 
-<!--# Remove this comment and use your own words to answer the question -->
+    It shows me the amount of times that each groups appears in the data column called income_id. For the HIC there is a freq of 81, LIC 33, LMC 47 and UMC 56
 
 ```{r}
+
+composition_tidy_capita_income_cat |> 
+  group_by(income_id) |> # los divide en grupos
+  summarise(count = n()) # cuenta la cantidad de apariciones de cada division de grupo
 
 ```
 
@@ -257,10 +287,12 @@ Follow these steps to summarise the data:
 
 2.  Observe the output in the Console and describe the difference to the resulting table of the previous code chunk.
 
-<!--# Remove this comment and use your own words to answer the question -->
+    It is the same function as before, its counting down how many times each variable of High income, upper middle income, lower middle income and low income appears in the column income_cat. Might be a bug but it's also showing all the counters for each other column and statistics of it like minimum, quarters, maximums and NA.
 
 ```{r}
-
+composition_tidy_capita_income_cat |> 
+  group_by(income_cat) |> 
+  summary(count = n())
 ```
 
 Follow these steps to create a summary with mean values:
@@ -271,11 +303,21 @@ Follow these steps to create a summary with mean values:
 
 3.  Why do you see `NA` for mean_msw_total at "high income"?
 
+    Probably because is also counting down the NA entries in the column.
+
 4.  Remove the `#` at the row starting with `tidyr::`.
 
 5.  Execute the code and observe the output in the Console. What has changed? How is that different to adding `na.rm = TRUE` as an argument to the `mean()` ?
 
+    now it actually calculates the mean for the high income, and the primary difference is that na.rm = true just removes the na for the calculus. and the drop_na removes the NA from the columns.
+
 ```{r}
+
+composition_tidy_capita_income_cat |> 
+  tidyr::drop_na(msw_capita_kg_year) |> 
+  group_by(income_cat) |> 
+  summarise(count = n(),
+            mean_msw_total = mean(msw_capita_kg_year))
 
 ```
 
@@ -288,7 +330,13 @@ Follow these steps to create a summary with mean values:
 3.  Store the summary table as a new object in your environment with the name `table_msw_generation`
 
 ```{r}
-
+table_msw_generation <- composition_tidy_capita_income_cat |>
+  tidyr::drop_na(msw_capita_kg_year) |> 
+  group_by(income_cat) |> 
+  summarise(count = n(), 
+            mean = mean(msw_capita_kg_year),
+            median = median(msw_capita_kg_year), 
+            sd = sd(msw_capita_kg_year))
 ```
 
 **Write the code yourself**
@@ -300,6 +348,18 @@ Follow these steps to create a summary with mean values:
 3.  Store the summary table as a new object in your environment with the name `table_composition`
 
 ```{r}
+
+table_composition <- composition_tidy_capita_income_cat |> 
+  tidyr::drop_na(msw_capita_kg_year, 
+                 food_organic_waste, 
+                 plastic, 
+                 paper_cardboard) |> 
+  group_by(income_cat) |> 
+  summarise(count = n(), 
+            mean_msw_total = mean(msw_capita_kg_year), 
+            mean_organic = mean(food_organic_waste),
+            mean_plastic = mean(plastic),
+            mean_paper_cardboard = mean(paper_cardboard))
 
 ```
 
@@ -380,11 +440,11 @@ The [`gt` R Package](https://gt.rstudio.com/index.html) is an extremely powerful
 1.  Execute the following two code chunks
 2.  Read the code, observe the output in the Viewer pane, and describe in your own words what each function does
 
--   `gt()`:
--   `tab_header()`:
--   `fmt_number()`:
--   `starts_with()`:
--   `cols_labels()`:
+-   `gt()`: prints the table into a viewr format
+-   `tab_header()`: Allows to modify the header of the image, writing titles and subtitles
+-   `fmt_number()`: Allows to specify the formats of the numbers, in this case just letting all the columns that contains mean having just one decimal
+-   `starts_with()`: allows to classify the variables / columns that starts with a specific typing
+-   `cols_labels()`: Allows to modify the label of the columns, instead of having silly names, we can put more direct and understandable names
 
 ```{r}
 # As previously, I have stored the data that I would have expected for the 
@@ -426,8 +486,8 @@ Below is another table for the report that uses the `knitr` R Package to style t
 
 1.  Read the code and describe in your own words what each function does
 
--   `rename()`:
--   `knitr::kable()`:
+-   `rename()`: allows us to rename the variable/columns to avoid the empty spaces of the previous titles
+-   `knitr::kable()`: Makes the same table as before but printed on txt format. also letting us decide to have just 1 decimal.
 
 ```{r}
 

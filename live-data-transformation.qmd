@@ -258,5 +258,7 @@ sanitation_national_2020_fct |>
   mutate(people_access = pop * percent / 100) |> 
   drop_na() |> 
   group_by(region) |> 
-  summarise()
+  summarise(people_access = sum(people_access),
+            pop = sum(pop)) |> 
+  mutate(percent = people_access / pop * 100)
 ```
